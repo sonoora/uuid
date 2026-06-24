@@ -2,7 +2,7 @@
 name = "sonoora-uuid"
 version = "0.1.0"
 description = "SONOORA UUID helper service"
-authors = ["SONOORA"]
+authors = [{ name = "SONOORA" }]
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115.13",
@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [tool.vercel]
-entrypoint = "main:app"
+entrypoint = "app:app"
 
 [tool.vercel.scripts]
 build = "python -m compileall main.py"

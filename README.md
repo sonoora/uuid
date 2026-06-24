@@ -5,7 +5,8 @@ FastAPI helper for generating Circle-compatible entity secret ciphertext.
 ## Runtime
 
 - Framework: FastAPI
-- Entrypoint: `main:app`
+- Runtime entrypoint: `main:app`
+- Vercel entrypoint: `app:app`
 - Vercel project: `uuid`
 - Required env names: `API_KEY`, `ENTITY_SECRET`, `PUBLIC_KEY`, `SESSION_SECRET`
 
