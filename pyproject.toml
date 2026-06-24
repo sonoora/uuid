@@ -1,0 +1,19 @@
+[project]
+name = "sonoora-uuid"
+version = "0.1.0"
+description = "SONOORA UUID helper service"
+authors = ["SONOORA"]
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.13",
+    "pydantic>=2.11.7",
+    "uvicorn>=0.34.3",
+    "slowapi>=0.1.9",
+    "pycryptodome>=3.23.0",
+]
+
+[tool.vercel]
+entrypoint = "main:app"
+
+[tool.vercel.scripts]
+build = "python -m compileall main.py"
