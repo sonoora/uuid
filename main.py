@@ -1,3 +1,5 @@
+from executor.routes import register_executor
+from executor.configuration import mode
 import os
 import logging
 import base64
@@ -60,6 +62,7 @@ def real_client_ip(request: Request) -> str:
 limiter = Limiter(key_func=real_client_ip, default_limits=[])
 
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
+register_executor(app)
 app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)
 
@@ -100,6 +103,8 @@ async def health():
 @app.get("/generate")
 @limiter.limit(RATE_LIMIT)
 async def generate_ciphertext(request: Request):
+    if mode() != "legacy":
+        return JSONResponse(status_code=410, content={"error": "legacy helper disabled"}, headers={"Cache-Control": "no-store"})
     ts = datetime.utcnow().isoformat()
 
     # Block browser-origin requests

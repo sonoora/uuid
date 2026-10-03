@@ -1,7 +1,7 @@
 [project]
 name = "sonoora-uuid"
 version = "0.1.0"
-description = "SONOORA UUID helper service"
+description = "SONOORA restricted Circle executor"
 authors = [{ name = "SONOORA" }]
 requires-python = ">=3.11"
 dependencies = [
@@ -16,4 +16,4 @@ dependencies = [
 entrypoint = "app:app"
 
 [tool.vercel.scripts]
-build = "python -m compileall main.py"
+build = "python -m compileall main.py executor"
