@@ -13,22 +13,20 @@ class Issuer:
 
     def issue(self, caller, envelope):
         context = envelope["context"]
-        version = validate_policy(caller, context, self.env)
+        validate_policy(caller, context, self.env)
+        key = self.journal.prepare(caller, envelope)
         # Never cache or return a previously issued ciphertext, including after a lost response.
         ciphertext = self.encrypt()
         receipt = {
-            "schemaVersion": "uuid-receipt-v1",
+            "schemaVersion": "uuid-audit-receipt-v1",
             "issuanceId": str(uuid4()),
-            "operationId": context["operationId"],
-            "attemptId": envelope["attemptId"],
             "requestId": envelope["requestId"],
-            "providerIdempotencyKey": context["providerIdempotencyKey"],
+            "idempotencyKey": key,
             "verifiedCaller": caller.name,
             "environment": caller.environment,
             "issuedAt": datetime.now(timezone.utc)
             .isoformat(timespec="milliseconds")
             .replace("+00:00", "Z"),
-            "policyVersion": version,
             "contextHash": digest("context", context),
             "requestHash": digest("request", envelope),
             "ciphertextHash": hashlib.sha256(
@@ -37,10 +35,10 @@ class Issuer:
         }
         receipt["issuanceHash"] = digest("issuance", receipt)
         self.journal.record(
-            caller, context, receipt
+            caller, receipt
         )  # Commit must succeed before releasing material.
         return {
-            "idempotencyKey": context["providerIdempotencyKey"],
+            "idempotencyKey": key,
             "entitySecretCiphertext": ciphertext,
             "audit": receipt,
         }

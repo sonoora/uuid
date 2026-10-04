@@ -3,6 +3,8 @@ import threading
 import psycopg
 from psycopg.types.json import Jsonb
 from .errors import HelperError
+from .canonical import digest
+from uuid import uuid4
 
 _slots = threading.BoundedSemaphore(4)
 
@@ -38,12 +40,27 @@ class Journal:
         finally:
             _slots.release()
 
-    def record(self, caller, context, receipt):
+    def prepare(self, caller, envelope):
+        row = self._run(
+            caller,
+            lambda conn: conn.execute(
+                "SELECT uuid_audit.prepare_request(%s,%s,%s,%s)",
+                (
+                    Jsonb(envelope),
+                    digest("request", envelope),
+                    digest("context", envelope["context"]),
+                    envelope["idempotencyKey"] or str(uuid4()),
+                ),
+            ).fetchone(),
+        )
+        return str(row[0])
+
+    def record(self, caller, receipt):
         self._run(
             caller,
             lambda conn: conn.execute(
-                "SELECT uuid_audit.record_emission(%s,%s)",
-                (Jsonb(context), Jsonb(receipt)),
+                "SELECT uuid_audit.record_receipt(%s)",
+                (Jsonb(receipt),),
             ).fetchone(),
         )
 
@@ -51,7 +68,7 @@ class Journal:
         row = self._run(
             caller,
             lambda conn: conn.execute(
-                "SELECT uuid_audit.read_receipt(%s)", (request_id,)
+                "SELECT uuid_audit.read_emission_receipt(%s)", (request_id,)
             ).fetchone(),
         )
         if not row or row[0] is None:

@@ -3,6 +3,10 @@
 <!-- sonoora-architecture:active -->
 > [Arquitetura vigente](../../../current_memory/core/ARQUITETURA_REPOS_E_OPERACAO.md): API executa Circle e mantém financeiro, integrações e auditoria; UUID fornece ciphertext. HOME, PASS, ADMIN, API, PAY e UUID são os repos de destino.
 
+## 2026-10-04 — correção do escopo contextual
+
+Supera o candidato amplo descrito abaixo: API mantém seu fluxo/controles Circle e só acrescenta contexto/recibo ao helper. UUID autentica DEV/PROD e registra emissão; mesma chave efetiva, ciphertext novo. Retiradas nova orquestração, reservas/locks/dispatch e UI ADMIN. Testes locais e revisão própria; sem novo monólito. [Execução reduzida e limites](../../../current_memory/Review%20and%20Fixes/01_plans/20261003_uuid_restore_contextual_helper/SCOPE_EXECUTION.md). Runtime/configuração/corte continuam separados e pendentes.
+
 ## 2026-10-04 — helper UUID contextual
 
 API executa Circle; UUID autentica DEV/PROD, grava contexto e retorna ciphertext/recibo. Intenções não armazenam ciphertext novo; despacho tem marcador durável, confirmação de lease e recuperação sem replay automático. ADMIN usa leitura de evidência protegida e deixa de buscar material para remediação. Validação local e eventos de commit/push em [execução H](../../../current_memory/Review%20and%20Fixes/01_plans/20261003_uuid_restore_contextual_helper/HELPER_EXECUTION.md). Corte de runtime/configuração não realizado por este candidato.

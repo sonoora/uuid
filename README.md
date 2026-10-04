@@ -5,19 +5,21 @@
 
 ## Contrato implementado
 
-`POST /internal/v1/ciphertext`, JSON estrito (16 KiB), `X-API-Key` DEV/PROD. Identidade vem da chave validada, nunca de Origin/IP/body. Contexto inclui operação, tentativa, finalidade, ator, vínculo de negócio e comando Circle completo. Retorna `idempotencyKey`, `entitySecretCiphertext` fresco e `audit` com IDs e hashes RFC 8785 / SHA-256. Não aceita comando arbitrário: somente wallet.create, wallet.deploy e token.transfer.
+`POST /internal/v1/ciphertext`, JSON estrito (16 KiB), `X-API-Key` DEV/PROD. Identidade vem da chave validada, nunca de Origin/IP/body. Contexto inclui finalidade, ator declarado pela API e detalhes limitados da solicitação. A chave Circle existente, quando já escolhida pela API, vai em idempotencyKey; null solicita uma nova. Retorna `idempotencyKey`, `entitySecretCiphertext` fresco e `audit` com IDs e hashes RFC 8785 / SHA-256. Não recebe nem executa comandos financeiros.
 
-O journal confirma a gravação antes da resposta. Repetir requestId é conflito; um novo pedido da mesma operação conserva a chave Circle e não pode alterar contexto. `GET /internal/v1/ciphertext/requests/{requestId}` consulta somente recibo do próprio caller. Nunca recupera ciphertext. `GET /generate` retorna 410; não há fallback legado. `/health` comprova apenas liveness.
+O journal confirma a gravação antes da resposta. Repetir requestId com o mesmo envelope conserva a chave e produz novo ciphertext; mudar o envelope do mesmo requestId é conflito. Uma preparação sem emissão pode existir se a criptografia falhar. Isso não representa operação financeira. `GET /internal/v1/ciphertext/requests/{requestId}` consulta somente recibo do próprio caller. Nunca recupera ciphertext. `GET /generate` retorna 410; não há fallback legado. `/health` comprova apenas liveness.
 
 Hashes permitem correlação e detecção de divergência. Não são assinatura independente nem restringem criptograficamente o ciphertext a um comando na Circle. A API continua responsável pela autorização financeira, despacho exato, idempotência e resultado.
 
 ## Configuração e migração
 
-Ver `.env.example`. Preservar ENTITY_SECRET e PUBLIC_KEY existentes; UUID não usa CIRCLE_API_KEY. API_KEY_DEV e API_KEY_PROD são distintos, 64 caracteres hex minúsculos. UUID_POLICY_DEV/PROD define accountRef, blockchains, walletSetIds, tokenAddresses e version. UUID_ISSUANCE_ENABLED=true habilita emissão somente quando os demais controles passam.
+Ver `.env.example`. Preservar ENTITY_SECRET e PUBLIC_KEY existentes; UUID não usa CIRCLE_API_KEY. API_KEY_DEV e API_KEY_PROD são distintos, 64 caracteres hex minúsculos. UUID_ISSUANCE_ENABLED=true habilita emissão somente quando os demais controles passam.
 
-Aplicar migrations/001_context_journal.sql com o dono de migração nos bancos existentes. Runtime conecta por TLS com logins diferentes que pertencem exclusivamente a sonoora_uuid_dev ou sonoora_uuid_prod; nunca dono/superuser nem membro do dono. Grupos são NOLOGIN; criar/provisionar logins por gestão de segredos, não no repositório. Runtime recebe somente EXECUTE nas funções, sem UPDATE/DELETE/SELECT direto. Leitor de auditoria recebe grupo sonoora_uuid_audit_reader conforme necessidade. Não dar esse grupo ao runtime UUID. Quota transacional: 30 emissões/minuto/caller; limite inicial a validar com carga antes do corte.
+Aplicar migrations/002_emission_journal.sql (standalone; 001 é candidato histórico, preservado, dispensável em instalações novas) com o dono de migração nos bancos existentes. Runtime conecta por TLS com logins diferentes que pertencem exclusivamente a sonoora_uuid_dev ou sonoora_uuid_prod; nunca dono/superuser nem membro do dono. Grupos são NOLOGIN; criar/provisionar logins por gestão de segredos, não no repositório. Runtime recebe somente EXECUTE nas funções, sem UPDATE/DELETE/SELECT direto. Leitor de auditoria recebe grupo sonoora_uuid_audit_reader conforme necessidade. Não dar esse grupo ao runtime UUID. Quota transacional: 30 preparações/minuto/caller, incluindo retries; limite inicial a validar com carga antes do corte.
 
-Não promover isoladamente: migrar journal/API, configurar chaves/políticas e preparar todos os callers antes de trocar o único projeto UUID. Nenhuma nova configuração ou ativação foi executada apenas por este código. Callbacks legados são uma integração distinta e não foram adicionados ao contrato contextual.
+As tabelas emission_requests e emission_receipts guardam contexto e recibos, nunca ciphertext. O UUID não verifica identidade do usuário final: registra a declaração do serviço autenticado. A API persiste o recibo na coluna audit_receipt do journal existente.
+
+Não promover isoladamente: migrar journal/API, configurar chaves e preparar todos os callers antes de trocar o único projeto UUID. Nenhuma nova configuração ou ativação foi executada apenas por este código. Callbacks legados são uma integração distinta e não foram adicionados ao contrato contextual.
 
 ## Validação
 
