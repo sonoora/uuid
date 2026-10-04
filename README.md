@@ -1,20 +1,24 @@
 # SONOORA UUID
 
 <!-- sonoora-architecture:active -->
-> [Arquitetura vigente](../../../current_memory/core/ARQUITETURA_REPOS_E_OPERACAO.md): API executa Circle e mantém financeiro, integrações e auditoria; UUID fornece ciphertext. HOME, PASS, ADMIN, API, PAY e UUID são os repos de destino.
+> [Arquitetura vigente](../../../current_memory/core/ARQUITETURA_REPOS_E_OPERACAO.md): API executa Circle e mantém financeiro, integrações e auditoria; UUID autentica e fornece ciphertext contextual.
 
-Helper Circle FastAPI. Autentica `X-API-Key` com `API_KEY`, gera ciphertext usando `ENTITY_SECRET` e `PUBLIC_KEY`, e devolve `idempotencyKey` e `entitySecretCiphertext`. A API executa o comando Circle com sua própria `CIRCLE_API_KEY`; essa credencial não é necessária no UUID.
+## Contrato implementado
 
-## Runtime e configuração
+`POST /internal/v1/ciphertext`, JSON estrito (16 KiB), `X-API-Key` DEV/PROD. Identidade vem da chave validada, nunca de Origin/IP/body. Contexto inclui operação, tentativa, finalidade, ator, vínculo de negócio e comando Circle completo. Retorna `idempotencyKey`, `entitySecretCiphertext` fresco e `audit` com IDs e hashes RFC 8785 / SHA-256. Não aceita comando arbitrário: somente wallet.create, wallet.deploy e token.transfer.
 
-- Vercel: projeto único `uuid`, branch `main`, entrada `app:app` / `main:app`.
-- `GET /health`: liveness; não comprova integração autenticada.
-- `GET /generate`: helper anterior, com autenticação e controles existentes.
-- Configuração existente: `API_KEY`, `ENTITY_SECRET`, `PUBLIC_KEY`; não imprimir valores. `SESSION_SECRET` existente não é removida por suposição.
-- Nenhum endpoint executor, claim/report ou credencial Circle de execução é requerido.
+O journal confirma a gravação antes da resposta. Repetir requestId é conflito; um novo pedido da mesma operação conserva a chave Circle e não pode alterar contexto. `GET /internal/v1/ciphertext/requests/{requestId}` consulta somente recibo do próprio caller. Nunca recupera ciphertext. `GET /generate` retorna 410; não há fallback legado. `/health` comprova apenas liveness.
 
-## Restauração de 2026-10-03
+Hashes permitem correlação e detecção de divergência. Não são assinatura independente nem restringem criptograficamente o ciphertext a um comando na Circle. A API continua responsável pela autorização financeira, despacho exato, idempotência e resultado.
 
-Código funcional restaurado ao baseline `27e41e88adb1acb40ec7e899be1c1460d53916fe`, em correção rastreável do lote executor. Sem nova arquitetura, conta Circle ou migração de dados. Ver [changelog](CHANGELOG.md) e [relatório de execução](../../../current_memory/Review%20and%20Fixes/01_plans/20261003_uuid_restore_contextual_helper/ROLLBACK_EXECUTION.md) para testes, publicação e limites reais.
+## Configuração e migração
 
-Chaves distintas DEV/PROD e auditoria contextual são evolução futura, ainda não implementada por este rollback. Não reativar o executor removido a partir de documentação histórica.
+Ver `.env.example`. Preservar ENTITY_SECRET e PUBLIC_KEY existentes; UUID não usa CIRCLE_API_KEY. API_KEY_DEV e API_KEY_PROD são distintos, 64 caracteres hex minúsculos. UUID_POLICY_DEV/PROD define accountRef, blockchains, walletSetIds, tokenAddresses e version. UUID_ISSUANCE_ENABLED=true habilita emissão somente quando os demais controles passam.
+
+Aplicar migrations/001_context_journal.sql com o dono de migração nos bancos existentes. Runtime conecta por TLS com logins diferentes que pertencem exclusivamente a sonoora_uuid_dev ou sonoora_uuid_prod; nunca dono/superuser nem membro do dono. Grupos são NOLOGIN; criar/provisionar logins por gestão de segredos, não no repositório. Runtime recebe somente EXECUTE nas funções, sem UPDATE/DELETE/SELECT direto. Leitor de auditoria recebe grupo sonoora_uuid_audit_reader conforme necessidade. Não dar esse grupo ao runtime UUID. Quota transacional: 30 emissões/minuto/caller; limite inicial a validar com carga antes do corte.
+
+Não promover isoladamente: migrar journal/API, configurar chaves/políticas e preparar todos os callers antes de trocar o único projeto UUID. Nenhuma nova configuração ou ativação foi executada apenas por este código. Callbacks legados são uma integração distinta e não foram adicionados ao contrato contextual.
+
+## Validação
+
+`python -m unittest discover -s tests -v`. Para prova PostgreSQL: UUID_TEST_DATABASE_URL deve apontar a banco local dedicado cujo nome contém fixture; esses testes criam roles e truncam somente uuid_audit desse banco. Nunca executar com URL real. Ver [execução H](../../../current_memory/Review%20and%20Fixes/01_plans/20261003_uuid_restore_contextual_helper/HELPER_EXECUTION.md) para candidato, resultados, push e pendências de corte. O rollback publicado continua documentado separadamente em ROLLBACK_EXECUTION.md.

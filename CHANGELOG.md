@@ -3,6 +3,11 @@
 <!-- sonoora-architecture:active -->
 > [Arquitetura vigente](../../../current_memory/core/ARQUITETURA_REPOS_E_OPERACAO.md): API executa Circle e mantém financeiro, integrações e auditoria; UUID fornece ciphertext. HOME, PASS, ADMIN, API, PAY e UUID são os repos de destino.
 
+## 2026-10-04 — helper UUID contextual
+
+API executa Circle; UUID autentica DEV/PROD, grava contexto e retorna ciphertext/recibo. Intenções não armazenam ciphertext novo; despacho tem marcador durável, confirmação de lease e recuperação sem replay automático. ADMIN usa leitura de evidência protegida e deixa de buscar material para remediação. Validação local e eventos de commit/push em [execução H](../../../current_memory/Review%20and%20Fixes/01_plans/20261003_uuid_restore_contextual_helper/HELPER_EXECUTION.md). Corte de runtime/configuração não realizado por este candidato.
+
+
 ## 2026-10-03 — restore Circle helper
 
 Remove o executor introduzido em `3d36cd2` e restaura os arquivos funcionais do helper `27e41e8`. API volta a ser o único emissor de comandos Circle neste contrato. Credenciais originais preservadas; contexto/identidades novas ficam para outro lote.
