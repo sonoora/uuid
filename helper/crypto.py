@@ -7,14 +7,25 @@ from Crypto.Hash import SHA256
 from .errors import HelperError
 
 
+def format_public_key(raw: str) -> str:
+    """Preserve the deployed helper's accepted PEM/base64 configuration formats."""
+    raw = raw.strip()
+    if raw.startswith("-----BEGIN"):
+        return raw.replace("\\n", "\n")
+    for tag in ("-----BEGIN PUBLIC KEY-----", "-----END PUBLIC KEY-----",
+                "-----BEGIN RSA PUBLIC KEY-----", "-----END RSA PUBLIC KEY-----"):
+        raw = raw.replace(tag, "")
+    raw = raw.replace("\\n", "").replace("\n", "").replace(" ", "")
+    lines = [raw[i:i + 64] for i in range(0, len(raw), 64)]
+    return "-----BEGIN PUBLIC KEY-----\n" + "\n".join(lines) + "\n-----END PUBLIC KEY-----"
+
+
 def encrypt_secret():
     stage = "secret_decode"
     try:
         secret = bytes.fromhex(os.environ.get("ENTITY_SECRET", ""))
         stage = "public_key_parse"
-        raw = os.environ.get("PUBLIC_KEY", "").replace("\\n", "\n").strip()
-        if not raw.startswith("-----BEGIN"):
-            raw = "-----BEGIN PUBLIC KEY-----\n" + raw + "\n-----END PUBLIC KEY-----"
+        raw = format_public_key(os.environ.get("PUBLIC_KEY", ""))
         key = RSA.import_key(raw)
         stage = "configuration_validation"
         if len(secret) != 32 or key.size_in_bits() < 2048:

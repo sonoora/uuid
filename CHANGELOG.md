@@ -21,3 +21,7 @@ Provas e marcos de commit/push/deploy: [relatório único](../../../current_memo
 ## 2026-10-04 — Activation diagnostics
 
 Record only failure stage/type for crypto and unexpected request failures, without exception text, payloads or credentials. Staged live issuance failed before receipt; no production-domain promotion. 15 unit tests pass; six database fixture tests skipped in this focused run.
+
+## 2026-10-04 — Public key configuration compatibility
+
+Restore the deployed helper's PUBLIC_KEY normalization before RSA import, retaining existing secret/key variables and crypto validation. Live staged diagnostics isolated failure to public-key parsing. Added synthetic encryption/decryption tests for five legacy formats; 16 unit tests pass, six database fixture tests skipped in focused run. Domain cut remains pending live verification.
