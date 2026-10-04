@@ -17,3 +17,7 @@ API executa Circle; UUID autentica DEV/PROD, grava contexto e retorna ciphertext
 Remove o executor introduzido em `3d36cd2` e restaura os arquivos funcionais do helper `27e41e8`. API volta a ser o único emissor de comandos Circle neste contrato. Credenciais originais preservadas; contexto/identidades novas ficam para outro lote.
 
 Provas e marcos de commit/push/deploy: [relatório único](../../../current_memory/Review%20and%20Fixes/01_plans/20261003_uuid_restore_contextual_helper/ROLLBACK_EXECUTION.md). Existência desta entrada não comprova publicação.
+
+## 2026-10-04 — Activation diagnostics
+
+Record only failure stage/type for crypto and unexpected request failures, without exception text, payloads or credentials. Staged live issuance failed before receipt; no production-domain promotion. 15 unit tests pass; six database fixture tests skipped in this focused run.

@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request
+import logging
 from fastapi.responses import JSONResponse
 from starlette.concurrency import run_in_threadpool
 from .auth import authenticate
@@ -17,7 +18,8 @@ def create_app(issuer=None, journal=None, env=None):
     async def safe_errors(request, call_next):
         try:
             response = await call_next(request)
-        except Exception:
+        except Exception as error:
+            logging.getLogger(__name__).error("uuid.request.failed exception_type=%s", type(error).__name__)
             response = JSONResponse({"error": "HELPER_UNAVAILABLE"}, status_code=503)
         response.headers["Cache-Control"] = "no-store"
         response.headers["X-Content-Type-Options"] = "nosniff"
