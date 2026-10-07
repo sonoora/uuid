@@ -24,3 +24,9 @@ Não promover isoladamente: migrar journal/API, configurar chaves e preparar tod
 ## Validação
 
 `python -m unittest discover -s tests -v`. Para prova PostgreSQL: UUID_TEST_DATABASE_URL deve apontar a banco local dedicado cujo nome contém fixture; esses testes criam roles e truncam somente uuid_audit desse banco. Nunca executar com URL real. Ver [execução H](../../../current_memory/Review%20and%20Fixes/01_plans/20261003_uuid_restore_contextual_helper/HELPER_EXECUTION.md) para candidato, resultados, push e pendências de corte. O rollback publicado continua documentado separadamente em ROLLBACK_EXECUTION.md.
+
+## Capacity policy — 2026-10-07
+
+Explicit migration 003_emission_capacity.sql replaces only prepare_request admission after 002. Journal/receipt/idempotency and crypto/API contracts remain intact. Defaults: global 120/min,8/sec; wallet_create and wallet_deploy each 60/min,4/sec; money_transfer 90/min,4/sec; remediation 12/min,1/sec; subject 30/min,8/sec. Preparations including retries consume environment/global/purpose/subject quotas atomically; caller remains SESSION_USER. Runtime cannot change policy/counters; missing policy or invalid context/hash fails closed. 429 retains Retry-After60. Disposable counters receive bounded cleanup after two days, immutable journals are preserved.
+
+Apply separately to each existing physical environment database. This correction activates DEV only; PROD retains the previous policy until its separate rollout. Deploying this SQL file does not apply it. No provider execution or production volume guarantee. Execution, Git, schema and proofs are in the root PRODUCTION_CAPACITY_PLAN.md section15.

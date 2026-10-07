@@ -3,6 +3,9 @@
 <!-- sonoora-architecture:active -->
 > [Arquitetura vigente](../../../current_memory/core/ARQUITETURA_REPOS_E_OPERACAO.md): API executa Circle e mantém financeiro, integrações e auditoria; UUID fornece ciphertext. HOME, PASS, ADMIN, API, PAY e UUID são os repos de destino.
 
+## 2026-10-07 — bounded contextual emission capacity
+
+Migration003 and native PostgreSQL concurrency/adversarial tests add shared global/purpose/subject burst/minute admission, atomic rollback, immutable reuse and restricted runtime policy access. Crypto/API contract unchanged. Explicit per-database DEV activation; PROD requires separate rollout. Internal ceilings require traffic/provider calibration. Git/schema/runtime proofs are recorded in the root capacity plan section15; UUID executes no Circle transaction.
 ## 2026-10-04 — ativação contextual publicada
 
 Estado confirmado: helper contextual ativo em UUID/main 917b133, API/dev 3d5ff84 e API/prod bffcec9, com deployments Git READY e aliases conferidos. Schemas e logins restritos DEV/PROD aplicados; emissão, hashes, recibo, retry, isolamento e readiness comprovados. API conserva execução Circle; callback e credenciais Circle preservados. PUBLIC_KEY mantém normalização compatível com a configuração anterior.
