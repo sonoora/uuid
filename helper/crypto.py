@@ -20,12 +20,12 @@ def format_public_key(raw: str) -> str:
     return "-----BEGIN PUBLIC KEY-----\n" + "\n".join(lines) + "\n-----END PUBLIC KEY-----"
 
 
-def encrypt_secret():
+def encrypt_secret(public_key=None):
     stage = "secret_decode"
     try:
         secret = bytes.fromhex(os.environ.get("ENTITY_SECRET", ""))
         stage = "public_key_parse"
-        raw = format_public_key(os.environ.get("PUBLIC_KEY", ""))
+        raw = format_public_key(public_key if public_key is not None else os.environ.get("PUBLIC_KEY", ""))
         key = RSA.import_key(raw)
         stage = "configuration_validation"
         if len(secret) != 32 or key.size_in_bits() < 2048:

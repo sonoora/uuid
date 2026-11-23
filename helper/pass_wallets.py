@@ -38,5 +38,5 @@ def material(caller, payload, env, encrypt=encrypt_secret):
         label = f"spaybubbleapps/test/pass-wallets/v1/{pass_id}/{op}".encode("ascii")
         digest = hmac.digest(bytes.fromhex(seed), label, "sha256")
         result[f"{op}_key"] = str(UUID(bytes=digest[:16], version=4))
-        result[f"{op}_ciphertext"] = encrypt()
+        result[f"{op}_ciphertext"] = encrypt(public_key=env.get("PASS_WALLETS_PUBLIC_KEY"))
     return result

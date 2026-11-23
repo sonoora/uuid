@@ -59,6 +59,12 @@ class PassWalletMaterialTest(unittest.TestCase):
         self.assertEqual(result.status_code, 200)
         self.assertEqual(set(result.json().values()), {"schema-only"})
 
+    def test_preview_can_use_the_public_key_returned_by_the_connected_circle_account(self):
+        self.env["PASS_WALLETS_PUBLIC_KEY"] = self.key.publickey().export_key().decode()
+        with patch.dict("os.environ", {"PUBLIC_KEY": "invalid legacy value"}):
+            result = self.client.post(self.path, json=self.payload, headers=self.headers)
+        self.assertEqual(result.status_code, 200)
+
     def test_auth_scope_and_contract(self):
         self.assertEqual(self.client.post(self.path, json=self.payload).status_code, 401)
         for payload in ({"pass_id": ""}, {"pass_id": 42}, {**self.payload, "amount": 10}):
