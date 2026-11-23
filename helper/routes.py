@@ -1,11 +1,14 @@
 from fastapi import FastAPI, Request
 import logging
+import json
+import os
 from fastapi.responses import JSONResponse
 from starlette.concurrency import run_in_threadpool
 from .auth import authenticate
 from .contracts import parse_envelope, request_identifier
 from .errors import HelperError
 from .journal import Journal
+from .pass_wallets import material
 from .service import Issuer
 
 
@@ -60,6 +63,23 @@ def create_app(issuer=None, journal=None, env=None):
                 raise HelperError("REQUEST_TOO_LARGE", 413)
         envelope = parse_envelope(bytes(raw))
         return await run_in_threadpool(issuer.issue, identity, envelope)
+
+    @app.post("/internal/v1/pass-wallets/material")
+    async def pass_wallet_material(request: Request):
+        if request.headers.get("content-type", "").partition(";")[0].strip().lower() != "application/json":
+            raise HelperError("INVALID_MEDIA_TYPE", 415)
+        body = bytearray()
+        async for chunk in request.stream():
+            if len(body) + len(chunk) > 512:
+                raise HelperError("REQUEST_TOO_LARGE", 413)
+            body.extend(chunk)
+        try:
+            payload = json.loads(body)
+        except (ValueError, UnicodeError):
+            raise HelperError("INVALID_REQUEST", 400) from None
+        headers = request.headers.getlist("x-api-key")
+        key = headers[0] if len(headers) == 1 else None
+        return await run_in_threadpool(material, key, payload, os.environ if env is None else env)
 
     @app.get("/internal/v1/ciphertext/requests/{request_id}")
     async def receipt(request_id: str, request: Request):
